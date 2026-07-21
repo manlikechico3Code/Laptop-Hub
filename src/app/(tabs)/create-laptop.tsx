@@ -24,7 +24,7 @@ export default function CreateLaptopScreen() {
   const handleAddListing = () => {
     // Validate all fields
     if (!title || !price || !processor || !ram || !storage || !vendorName || !vendorLocation) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert('Error', 'Please fill in all fields to ctreate one');
       return;
     }
 

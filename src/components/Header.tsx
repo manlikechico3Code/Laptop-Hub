@@ -9,11 +9,11 @@ export default function Header({ onSearch }: HeaderProps) {
             <View style={styles.brandRow}>
                 <View style={styles.logoMark}>
                     <Text style={styles.logoText}>
-                        Z
+                        L
                     </Text>
                 </View>
                 {/* <Image source={require("@/assets/images/icon.png")} style={{width: 30, height: 30, borderRadius: 50}} /> */}
-                <Text style={styles.brandText}>ZoweHub</Text>
+                <Text style={styles.brandText}>Laptop Hub</Text>
             </View>
 
             <View style={styles.searchBar}>
