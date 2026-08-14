@@ -16,7 +16,7 @@ export const supabase = createClient(
 );
 
 // Image upload functions
-const BUCKET_NAME = process.env.EXPO_PUBLIC_SUPABASE_BUCKET || "'laptop_images";
+const BUCKET_NAME = process.env.EXPO_PUBLIC_SUPABASE_BUCKET || "laptop-images";
 
 function base64ToArrayBuffer(base64: string): ArrayBuffer {
   const binary = globalThis.atob(base64);
@@ -65,4 +65,18 @@ export function getPublicImageUrl(path: string): string {
 export async function deleteImage(path: string): Promise<{ error: any }> {
   const { error } = await supabase.storage.from(BUCKET_NAME).remove([path]);
   return { error };
+}
+
+/**
+ * Given a public storage URL (as returned by getPublicImageUrl), extract the
+ * storage path so it can be passed to deleteImage(). Returns null if the URL
+ * doesn't look like it belongs to our bucket.
+ */
+export function getStoragePathFromPublicUrl(url: string): string | null {
+  const marker = `/object/public/${BUCKET_NAME}/`;
+  const index = url.indexOf(marker);
+  if (index === -1) {
+    return null;
+  }
+  return url.slice(index + marker.length);
 }
