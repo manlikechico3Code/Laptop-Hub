@@ -1,95 +1,195 @@
 import { useAuth } from "@/contexts/AuthContext";
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { Colors } from '@/constants/theme';
+import { getPublicImageUrl, uploadImage } from "@/utils/supabase";
 import {
-  faBell,
-  faMessage,
   faChartBar,
+  faCircleCheck,
   faGear,
+  faLink,
+  faMessage,
   faPencil,
   faPhone,
-  faPlaneCircleCheck,
-  faCircleCheck,
-  faHouse,
-  faMagnifyingGlass,
-  faPlus,
-  faUser,
-  faLink,
-} from '@fortawesome/free-solid-svg-icons';
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
+import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
+import { useState } from "react";
 import {
+  Alert,
   Image,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-  Pressable,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ProfileScreen() {
-  const { user, logout } = useAuth();
+  const { user, profile, logout, updateProfile } = useAuth();
   const router = useRouter();
+  const [uploading, setUploading] = useState(false);
 
   const handleLogout = () => {
     logout();
     router.replace("/login");
   };
 
+  const handlePickProfileImage = async () => {
+    if (!user) {
+      Alert.alert("Error", "Please log in to update your profile picture");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (result.canceled || !result.assets?.[0]?.uri) {
+      return;
+    }
+
+    const fileUri = result.assets[0].uri;
+    const fileName = `${user.id}/profile-${Date.now()}.jpg`;
+
+    try {
+      setUploading(true);
+      const { data, error } = await uploadImage(fileUri, fileName);
+
+      if (error || !data?.path) {
+        throw new Error("Failed to upload profile image");
+      }
+
+      const publicUrl = getPublicImageUrl(data.path);
+      const { error: profileError } = await updateProfile({
+        avatar_url: publicUrl,
+      });
+
+      if (profileError) {
+        console.error(
+          "Error updating profile:",
+          JSON.stringify(profileError, null, 2),
+        );
+        throw profileError;
+      }
+
+      Alert.alert("Success", "Profile image updated");
+    } catch (error: any) {
+      Alert.alert(
+        "Upload failed",
+        error?.message || "Unable to save profile image",
+      );
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const getInitials = (value: string) => {
+    if (!value) {
+      return "U";
+    }
+
+    return (
+      value
+        .split(/[\s@.]+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase() || "")
+        .join("") || "U"
+    );
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.scrollView}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.profileSection}>
-          <View style={styles.avatarContainer}>
-            <Image
-              source={require("@/assets/images/emma.jpeg")}
-              style={styles.avatar}
-            />
-          </View>
-          <Text style={styles.profileName}>{user?.name || "User"}</Text>
-          <Text style={styles.profileEmail}></Text>
-        </View>
-        <View style={styles.cardContainier}>
-          <TouchableOpacity style={styles.menuRow}>
-            <View style={styles.menuLeft}>
-              <FontAwesomeIcon icon={faLink} style={styles.uniCodeIcon} />
-              <Text style={styles.menuText}>Link Account</Text>
+          <Pressable onPress={handlePickProfileImage} disabled={uploading}>
+            <View style={styles.avatarContainer}>
+              {profile?.avatar_url ? (
+                <Image
+                  source={{ uri: profile.avatar_url }}
+                  style={styles.avatar}
+                />
+              ) : (
+                <View style={styles.avatarFallback}>
+                  <Text style={styles.avatarFallbackText}>
+                    {getInitials(profile?.name || user?.email || "User")}
+                  </Text>
+                </View>
+              )}
             </View>
-          </TouchableOpacity>
+          </Pressable>
+          <Text style={styles.profileName}>
+            {profile?.name || user?.email || "User"}
+          </Text>
+          <Text style={styles.profileEmail}>{user?.email || "No email"}</Text>
+          {uploading && (
+            <Text style={styles.uploadingText}>Uploading image...</Text>
+          )}
         </View>
-        <View style={styles.cardContainier}>
-          <TouchableOpacity style={styles.menuRow}>
+
+        <Pressable
+          style={styles.cardContainier}
+          onPress={() => router.push("/links" as any)}
+        >
+          <View style={styles.menuLeft}>
+            <FontAwesomeIcon icon={faLink} style={styles.uniCodeIcon} />
+            <Text style={styles.menuText}>Link Account</Text>
+          </View>
+        </Pressable>
+
+        <Pressable
+          style={styles.cardContainier}
+          onPress={() => router.push("/email")}
+        >
+          <View style={styles.menuRow}>
             <View style={styles.menuLeft}>
               <FontAwesomeIcon icon={faMessage} style={styles.uniCodeIcon} />
               <Text style={styles.menuText}>Email</Text>
             </View>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.cardContainier}>
-          <TouchableOpacity style={styles.menuRow}>
+          </View>
+        </Pressable>
+
+        <Pressable
+          style={styles.cardContainier}
+          onPress={() => router.push("/sales")}
+        >
+          <View style={styles.menuRow}>
             <View style={styles.menuLeft}>
               <FontAwesomeIcon icon={faChartBar} style={styles.uniCodeIcon} />
               <Text style={styles.menuText}>Sales</Text>
             </View>
-          </TouchableOpacity>
-        </View>
+          </View>
+        </Pressable>
+
         <View style={styles.cardContainier}>
           <TouchableOpacity style={styles.menuRow}>
             <View style={styles.menuLeft}>
               <FontAwesomeIcon icon={faGear} style={styles.uniCodeIcon} />
-              <Text style={styles.menuText}>Setting</Text>
+              <Text style={styles.menuText}>Settings</Text>
             </View>
           </TouchableOpacity>
         </View>
-        <View style={styles.cardContainier}>
-          <TouchableOpacity style={styles.menuRow}>
+
+        <Pressable
+          style={styles.cardContainier}
+          onPress={() => router.push("/profileEdit")}
+        >
+          <View style={styles.menuRow}>
             <View style={styles.menuLeft}>
               <FontAwesomeIcon icon={faPencil} style={styles.uniCodeIcon} />
               <Text style={styles.menuText}>Edit Profile</Text>
             </View>
-          </TouchableOpacity>
-        </View>
+          </View>
+        </Pressable>
+
         <View style={styles.cardContainier}>
           <TouchableOpacity style={styles.menuRow}>
             <View style={styles.menuLeft}>
@@ -98,21 +198,25 @@ export default function ProfileScreen() {
             </View>
           </TouchableOpacity>
         </View>
-        <Pressable style={styles.cardContainier} onPress={handleLogout}>
-          <TouchableOpacity style={styles.menuRow}>
+
+        <Pressable
+          style={styles.cardContainier}
+          onPress={() => router.push("/verify")}
+        >
+          <View style={styles.menuRow}>
             <View style={styles.menuLeft}>
-              <FontAwesomeIcon icon={faCircleCheck } style={styles.uniCodeIcon} />
+              <FontAwesomeIcon
+                icon={faCircleCheck}
+                style={styles.uniCodeIcon}
+              />
               <Text style={styles.menuText}>Verify</Text>
             </View>
-          </TouchableOpacity>
+          </View>
         </Pressable>
-        <View>
-           <Pressable style={{ marginTop: 20, padding: 10, backgroundColor: 'red', borderRadius: 5, alignItems: "center" }}
-              onPress={handleLogout}>
-              <Text style={{ color: 'white' }}>Logout</Text>
-          </Pressable>
 
-        </View>
+        <Pressable style={styles.logoutButton} onPress={handleLogout}>
+          <Text style={styles.logoutText}>Logout</Text>
+        </Pressable>
       </ScrollView>
     </SafeAreaView>
   );
@@ -125,6 +229,9 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  contentContainer: {
+    paddingBottom: 32,
   },
   content: {
     flex: 1,
@@ -159,6 +266,19 @@ const styles = StyleSheet.create({
     height: "100%",
     borderRadius: 40,
   },
+  avatarFallback: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 40,
+    backgroundColor: "#F3E2D7",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarFallbackText: {
+    color: "#7A4A2B",
+    fontSize: 24,
+    fontWeight: "700",
+  },
   profileName: {
     color: "#161010",
     fontSize: 20,
@@ -168,6 +288,11 @@ const styles = StyleSheet.create({
   profileEmail: {
     color: "#6b7280",
     fontSize: 16,
+  },
+  uploadingText: {
+    marginTop: 8,
+    fontSize: 12,
+    color: "#6b7280",
   },
   cardContainier: {
     backgroundColor: "#fff",
@@ -204,5 +329,18 @@ const styles = StyleSheet.create({
     color: "#1C1C1E",
     fontWeight: "500",
     marginLeft: 14,
+  },
+  logoutButton: {
+    marginTop: 20,
+    marginHorizontal: 20,
+    paddingVertical: 14,
+    backgroundColor: "#dc2626",
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  logoutText: {
+    color: "#ffffff",
+    fontSize: 15,
+    fontWeight: "700",
   },
 });

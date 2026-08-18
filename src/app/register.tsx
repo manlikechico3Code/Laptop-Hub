@@ -1,5 +1,5 @@
 import { Colors } from "@/constants/theme";
-import  supabase  from "@/utils/supabase";
+import { supabase } from "@/utils/supabase";
 import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { router } from "expo-router";

@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "LAPTOP HUB",
-    "slug": "LAPTOP HUB",
+    "slug": "laptop-hub",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -17,7 +17,8 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "yescom.laptop.hub"
     },
     "web": {
       "output": "static",
@@ -39,6 +40,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "de28f6ed-881a-479a-b20e-e87fbbed0674"
+      }
     }
   }
 }

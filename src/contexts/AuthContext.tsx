@@ -1,11 +1,11 @@
 import { supabase } from "@/utils/supabase";
 import { Session, User } from "@supabase/supabase-js";
 import {
-    createContext,
-    ReactNode,
-    useContext,
-    useEffect,
-    useState,
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useState,
 } from "react";
 
 interface Profile {
@@ -118,17 +118,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("profiles")
-        .update(updates)
-        .eq("id", user.id);
+        .upsert({ id: user.id, ...updates }, { onConflict: "id" })
+        .select()
+        .single();
 
       if (error) {
         return { error };
       }
 
-      // Refetch profile after update
-      const profileData = await fetchProfile(user.id);
+      const profileData = data ?? (await fetchProfile(user.id));
       setProfile(profileData);
 
       return { error: null };
